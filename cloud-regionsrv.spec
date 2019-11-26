@@ -21,7 +21,7 @@ Version:        8.0.4
 Release:        0
 License:        GPL-3.0+
 Summary:        Cloud Environment Region Service
-URL:            https://github.com/SUSE/Enceladus
+URL:            https://github.com/SUSE-Enceladus/cloud-regionsrv
 Group:          Productivity/Networking/Web/Servers
 Source0:        %{name}-%{version}.tar.bz2
 Requires:       apache2
