@@ -15,3 +15,7 @@ install:
 	cp -r $(dirs) "$(DESTDIR)/"
 	mkdir -p "$(DESTDIR)/var/log/regionService"
 	touch "$(DESTDIR)/var/log/regionService/regionInfo.log"
+
+coverage:
+	pytest --cov=region_srv --cov-report=html -v
+
