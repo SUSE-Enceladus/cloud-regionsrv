@@ -119,38 +119,20 @@ def create_smt_region_map(conf):
                 'Missing smt-fingerprint data in section %s' % section
             )
             sys.exit(1)
-        smt_ips = region_smt_ips.split(',')
-        smt_ipsv6 = None
-        if region_smt_ipsv6:
-            smt_ipsv6 = region_smt_ipsv6.split(',')
-            if len(smt_ips) != len(smt_ipsv6):
-                msg = 'Number of configured SMT IPv4 adresses does not '
-                msg += 'match number of configured IPv6 addresses for '
-                msg += 'section "%s"'
-                logging.error(msg % section)
-                sys.exit(1)
-        if len(smt_ips) > 1:
-            smt_names = region_smt_names.split(',')
-            if len(smt_names) > 1 and len(smt_names) != len(smt_ips):
-                logging.error(
-                    'Ambiguous SMT name and SMT IP pairings %s' % section
-                )
-                sys.exit(1)
-            smt_cert_fingerprints = region_smt_cert_fingerprints.split(',')
-            if (
-                    len(smt_cert_fingerprints) > 1 and
-                    len(smt_cert_fingerprints) != len(smt_ips)
-            ):
-                logging.error(
-                    'Ambiguous SMT name and finger print pairings %s' % section
-                )
-                sys.exit(1)
-        smt_info = {
-            'smt_ipsv4': region_smt_ips,
-            'smt_ipsv6': region_smt_ipsv6,
-            'smt_names': region_smt_names,
-            'smt_fps': region_smt_cert_fingerprints
-        }
+
+        try:
+            smt_info = region_srv.parse_region_info(
+                region_smt_ips,
+                region_smt_ipsv6,
+                region_smt_names,
+                region_smt_cert_fingerprints
+            )
+        except ValueError as e:
+            logging.error(
+                '%s in section "%s"' % (e, section)
+            )
+            sys.exit(1)
+
         region_name_to_smt_data_map[section] = smt_info
         for ip_range in region_public_ip_ranges.split(','):
             try:
@@ -162,7 +144,6 @@ def create_smt_region_map(conf):
             ip_range_to_smt_data_map.insert(ip_range, smt_info)
 
     return ip_range_to_smt_data_map, region_name_to_smt_data_map
-
 
 # ============================================================================
 def usage():
@@ -283,4 +264,4 @@ def index():
 
 # Run the service
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='::', port=5555)

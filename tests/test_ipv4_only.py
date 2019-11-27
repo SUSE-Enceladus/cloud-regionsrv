@@ -12,12 +12,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'helpers'))
 import region_srv
 from helpers import xml_helper
 
-region_data = {
+region_data = region_srv.parse_region_info(*{
     'smt_ipsv4': '10.10.10.10,20.20.20.20',
     'smt_ipsv6': None,
     'smt_names': '10.susecloud.net,20.susecloud.net',
     'smt_fps': '0a:0a:0a:0a,0b:0b:0b:0b'
-}
+}.values())
 
 region_map = {'antarctica-central': region_data}
 

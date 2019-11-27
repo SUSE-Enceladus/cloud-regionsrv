@@ -13,38 +13,52 @@ def get_response_xml(requester_ip, region_hint, region_name_to_smt_data_map, ip_
     if not smt_server_data:
         return
 
-    smt_ipsv4 = smt_server_data['smt_ipsv4'].split(',')
-    num_smt_ipsv4 = len(smt_ipsv4)
-    smt_ipsv6 = ['fc00::/7'] * num_smt_ipsv4
-    if smt_server_data['smt_ipsv6']:
-        smt_ipsv6 = smt_server_data['smt_ipsv6'].split(',')
-    smt_names = smt_server_data['smt_names'].split(',')
-    num_smt_names = len(smt_names)
-    smt_cert_fingerprints = smt_server_data['smt_fps'].split(',')
-    num_smt_fingerprints = len(smt_cert_fingerprints)
-    smt_info_xml = '<regionSMTdata>'
+    # Randomize the order of the update server information provided to the client
+    smt_server_data = random.sample(smt_server_data, len(smt_server_data))
 
-    # Randomize the order of the SMT server information provided to the client
-    while num_smt_ipsv4:
-        entry = random.randint(0, num_smt_ipsv4 - 1)
-        smt_ip = smt_ipsv4[entry]
-        smt_ipv6 = smt_ipsv6[entry]
-        del (smt_ipsv4[entry])
-        if num_smt_names > 1:
-            smt_name = smt_names[entry]
-            del (smt_names[entry])
-        else:
-            smt_name = smt_names[0]
-        if num_smt_fingerprints > 1:
-            smt_fingerprint = smt_cert_fingerprints[entry]
-            del (smt_cert_fingerprints[entry])
-        else:
-            smt_fingerprint = smt_cert_fingerprints[0]
-        num_smt_ipsv4 -= 1
-        smt_info_xml += '<smtInfo SMTserverIP="%s" ' % smt_ip
-        smt_info_xml += 'SMTserverIPv6="%s" ' % smt_ipv6
-        smt_info_xml += 'SMTserverName="%s" ' % smt_name
-        smt_info_xml += 'fingerprint="%s"/>' % smt_fingerprint
+    smt_info_xml = '<regionSMTdata>'
+    for update_server in smt_server_data:
+        smt_info_xml += '<smtInfo SMTserverIP="%s" ' % update_server[0]
+        if update_server[1]:
+            smt_info_xml += 'SMTserverIPv6="%s" ' % update_server[1]
+        smt_info_xml += 'SMTserverName="%s" ' % update_server[2]
+        smt_info_xml += 'fingerprint="%s"/>' % update_server[3]
 
     smt_info_xml += '</regionSMTdata>'
     return smt_info_xml
+
+
+def parse_region_info(region_smt_ips, region_smt_ipsv6, region_smt_names, region_smt_cert_fingerprints):
+    ipsv4 = region_smt_ips.split(',')
+    num_ips = len(ipsv4)
+
+    if region_smt_ipsv6:
+        ipsv6 = region_smt_ipsv6.split(',')
+        if len(ipsv6) != num_ips:
+            msg = 'Number of configured SMT IPv4 adresses does not '
+            msg += 'match number of configured IPv6 addresses'
+            raise ValueError(msg)
+    else:
+        ipsv6 = [None] * num_ips
+
+    fqdns = region_smt_names.split(',')
+    if len(fqdns) > 1 and len(fqdns) != num_ips:
+        raise ValueError('Ambiguous SMT name and SMT IP pairings')
+
+    if len(fqdns) == 1 and len(fqdns) != num_ips:
+        fqdns = [fqdns[0]] * num_ips
+
+    fingerprints = region_smt_cert_fingerprints.split(',')
+    if len(fingerprints) > 1 and len(fingerprints) != num_ips:
+        raise ValueError('Ambiguous SMT name and finger print pairings')
+
+    if len(fingerprints) == 1 and len(fingerprints) != num_ips:
+        fingerprints = [fingerprints[0]] * num_ips
+
+    region_info = [
+        (
+            ipsv4[i], ipsv6[i], fqdns[i], fingerprints[i]
+        ) for i in range(0, len(ipsv4))
+    ]
+
+    return region_info
