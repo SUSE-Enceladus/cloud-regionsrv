@@ -53,8 +53,8 @@ import ipaddress
 import logging
 import os
 import pytricia
-import random
 import sys
+import region_srv
 
 from flask import Flask
 from flask import request
@@ -68,15 +68,15 @@ def create_smt_region_map(conf):
              tree structure
          region_name_to_smt_data_map:
              maps all region names to their respective SMT server info"""
-    ip_range_to_smt_data_map = pytricia.PyTricia()
+    ipv4_ranges_map = pytricia.PyTricia()
+    ipv6_ranges_map = pytricia.PyTricia(128)
     region_name_to_smt_data_map = {}
     region_data_cfg = configparser.RawConfigParser()
     try:
         parsed = region_data_cfg.read(conf)
-    except Exception:
+    except Exception as e:
         logging.error('Could not parse configuration file %s' % conf)
-        type, value, tb = sys.exc_info()
-        logging.error(value.message)
+        logging.error(str(e))
         return
     if not parsed:
         logging.error('Error parsing config file: %s' % conf)
@@ -91,6 +91,14 @@ def create_smt_region_map(conf):
         except Exception:
             logging.error('Missing public-ips data in section %s' % section)
             sys.exit(1)
+        try:
+            region_public_ipv6_ranges = ''
+            region_public_ipv6_ranges = region_data_cfg.get(
+                section,
+                'public-ipsv6'
+            )
+        except Exception:
+            pass
         try:
             region_smt_ips = region_data_cfg.get(section, 'smt-server-ip')
         except Exception:
@@ -119,50 +127,41 @@ def create_smt_region_map(conf):
                 'Missing smt-fingerprint data in section %s' % section
             )
             sys.exit(1)
-        smt_ips = region_smt_ips.split(',')
-        smt_ipsv6 = None
-        if region_smt_ipsv6:
-            smt_ipsv6 = region_smt_ipsv6.split(',')
-            if len(smt_ips) != len(smt_ipsv6):
-                msg = 'Number of configured SMT IPv4 adresses does not '
-                msg += 'match number of configured IPv6 addresses for '
-                msg += 'section "%s"'
-                logging.error(msg % section)
-                sys.exit(1)
-        if len(smt_ips) > 1:
-            smt_names = region_smt_names.split(',')
-            if len(smt_names) > 1 and len(smt_names) != len(smt_ips):
-                logging.error(
-                    'Ambiguous SMT name and SMT IP pairings %s' % section
-                )
-                sys.exit(1)
-            smt_cert_fingerprints = region_smt_cert_fingerprints.split(',')
-            if (
-                    len(smt_cert_fingerprints) > 1 and
-                    len(smt_cert_fingerprints) != len(smt_ips)
-            ):
-                logging.error(
-                    'Ambiguous SMT name and finger print pairings %s' % section
-                )
-                sys.exit(1)
-        smt_info = {
-            'smt_ipsv4': region_smt_ips,
-            'smt_ipsv6': region_smt_ipsv6,
-            'smt_names': region_smt_names,
-            'smt_fps': region_smt_cert_fingerprints
-        }
+
+        try:
+            smt_info = region_srv.parse_region_info(
+                region_smt_ips,
+                region_smt_ipsv6,
+                region_smt_names,
+                region_smt_cert_fingerprints
+            )
+        except ValueError as e:
+            logging.error(
+                '%s in section "%s"' % (e, section)
+            )
+            sys.exit(1)
+
         region_name_to_smt_data_map[section] = smt_info
         for ip_range in region_public_ip_ranges.split(','):
             try:
-                ipaddress.ip_network(ip_range)
+                ipaddress.IPv4Network(ip_range)
             except ValueError:
                 msg = 'Could not proces range, improper format: %s'
                 logging.error(msg % ip_range)
                 continue
-            ip_range_to_smt_data_map.insert(ip_range, smt_info)
 
-    return ip_range_to_smt_data_map, region_name_to_smt_data_map
+            ipv4_ranges_map.insert(ip_range, smt_info)
 
+        for ip_range in region_public_ipv6_ranges.split(','):
+            try:
+                ipaddress.IPv6Network(ip_range)
+            except ValueError:
+                msg = 'Could not proces range, improper format: %s'
+                logging.error(msg % ip_range)
+                continue
+            ipv6_ranges_map.insert(ip_range, smt_info)
+
+    return ipv4_ranges_map, ipv6_ranges_map, region_name_to_smt_data_map
 
 # ============================================================================
 def usage():
@@ -213,11 +212,10 @@ for option, option_value in cmd_opts:
 srvConfig = configparser.RawConfigParser()
 try:
     parsed = srvConfig.read(region_info_config_name)
-except Exception:
+except Exception as e:
     msg = 'Could not parse configuration file "%s"'
     print(msg % region_info_config_name)
-    type, value, tb = sys.exc_info()
-    print(value.message)
+    print(str(e))
     sys.exit(1)
 
 if not parsed:
@@ -249,7 +247,7 @@ except IOError:
 
 
 # Build the map initially
-ip_range_to_smt_data_map, region_name_to_smt_data_map = create_smt_region_map(
+ipv4_ranges_map, ipv6_ranges_map, region_name_to_smt_data_map = create_smt_region_map(
     region_data_config_name
 )
 
@@ -260,54 +258,27 @@ app = Flask(__name__)
 @app.route('/regionInfo')
 def index():
     requester_ip = request.remote_addr
-    request_url = request.url
+    region_hint = request.args.get('regionHint')
+
     logging.info('Data request from: %s' % requester_ip)
-    region_hint = request_url.split('regionHint=')[-1]
-    smt_server_data = None
-    if region_hint != request_url:
+
+    if region_hint:
         logging.info('\tRegion hint: %s' % region_hint)
-        smt_server_data = region_name_to_smt_data_map.get(region_hint, None)
-    if not smt_server_data:
-        smt_server_data = ip_range_to_smt_data_map.get(requester_ip)
-    if not smt_server_data:
+
+    response_xml = region_srv.get_response_xml(
+        requester_ip,
+        region_hint,
+        region_name_to_smt_data_map,
+        ipv4_ranges_map,
+        ipv6_ranges_map
+    )
+
+    if response_xml:
+        logging.info('Provided: %s' % response_xml)
+        return response_xml, 200
+    else:
         logging.info('\tDenied')
-        return 404
-    smt_ipsv4 = smt_server_data['smt_ipsv4'].split(',')
-    num_smt_ipsv4 = len(smt_ipsv4)
-    smt_ipsv6 = ['fc00::/7'] * num_smt_ipsv4
-    if smt_server_data['smt_ipsv6']:
-        smt_ipsv6 = smt_server_data['smt_ipsv6'].split(',')
-    smt_names = smt_server_data['smt_names'].split(',')
-    num_smt_names = len(smt_names)
-    smt_cert_fingerprints = smt_server_data['smt_fps'].split(',')
-    num_smt_fingerprints = len(smt_cert_fingerprints)
-    smt_info_xml = '<regionSMTdata>'
-    # Randomize the order of the SMT server information provided to the client
-    while num_smt_ipsv4:
-        entry = random.randint(0, num_smt_ipsv4-1)
-        smt_ip = smt_ipsv4[entry]
-        smt_ipv6 = smt_ipsv6[entry]
-        del(smt_ipsv4[entry])
-        if num_smt_names > 1:
-            smt_name = smt_names[entry]
-            del(smt_names[entry])
-        else:
-            smt_name = smt_names[0]
-        if num_smt_fingerprints > 1:
-            smt_fingerprint = smt_cert_fingerprints[entry]
-            del(smt_cert_fingerprints[entry])
-        else:
-            smt_fingerprint = smt_cert_fingerprints[0]
-        num_smt_ipsv4 -= 1
-        smt_info_xml += '<smtInfo SMTserverIP="%s" ' % smt_ip
-        smt_info_xml += 'SMTserverIPv6="%s" ' % smt_ipv6
-        smt_info_xml += 'SMTserverName="%s" ' % smt_name
-        smt_info_xml += 'fingerprint="%s"/>' % smt_fingerprint
-    smt_info_xml += '</regionSMTdata>'
-
-    logging.info('Provided: %s' % smt_info_xml)
-    return smt_info_xml, 200
-
+        return 'Not found', 404
 
 # Run the service
 if __name__ == '__main__':
