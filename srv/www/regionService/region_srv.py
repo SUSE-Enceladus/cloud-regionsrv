@@ -1,14 +1,20 @@
 import random
+import ipaddress
 
 
-def get_response_xml(requester_ip, region_hint, region_name_to_smt_data_map, ip_range_to_smt_data_map):
+def get_response_xml(requester_ip, region_hint, region_name_to_smt_data_map, ipv4_ranges_map, ipv6_ranges_map):
     smt_server_data = None
 
     if region_hint:
         smt_server_data = region_name_to_smt_data_map.get(region_hint, None)
 
     if not smt_server_data:
-        smt_server_data = ip_range_to_smt_data_map.get(requester_ip)
+        parsed_address = ipaddress.ip_address(requester_ip)
+
+        if type(parsed_address) == ipaddress.IPv4Address:
+            smt_server_data = ipv4_ranges_map.get(requester_ip)
+        else:
+            smt_server_data = ipv6_ranges_map.get(requester_ip)
 
     if not smt_server_data:
         return
@@ -16,13 +22,13 @@ def get_response_xml(requester_ip, region_hint, region_name_to_smt_data_map, ip_
     # Randomize the order of the update server information provided to the client
     smt_server_data = random.sample(smt_server_data, len(smt_server_data))
 
-    smt_info_xml = '<regionSMTdata>'
+    smt_info_xml = '<regionSMTdata>\n'
     for update_server in smt_server_data:
         smt_info_xml += '<smtInfo SMTserverIP="%s" ' % update_server[0]
         if update_server[1]:
             smt_info_xml += 'SMTserverIPv6="%s" ' % update_server[1]
         smt_info_xml += 'SMTserverName="%s" ' % update_server[2]
-        smt_info_xml += 'fingerprint="%s"/>' % update_server[3]
+        smt_info_xml += 'fingerprint="%s"/>\n' % update_server[3]
 
     smt_info_xml += '</regionSMTdata>'
     return smt_info_xml

@@ -68,15 +68,15 @@ def create_smt_region_map(conf):
              tree structure
          region_name_to_smt_data_map:
              maps all region names to their respective SMT server info"""
-    ip_range_to_smt_data_map = pytricia.PyTricia()
+    ipv4_ranges_map = pytricia.PyTricia()
+    ipv6_ranges_map = pytricia.PyTricia(128)
     region_name_to_smt_data_map = {}
     region_data_cfg = configparser.RawConfigParser()
     try:
         parsed = region_data_cfg.read(conf)
-    except Exception:
+    except Exception as e:
         logging.error('Could not parse configuration file %s' % conf)
-        type, value, tb = sys.exc_info()
-        logging.error(value.message)
+        logging.error(str(e))
         return
     if not parsed:
         logging.error('Error parsing config file: %s' % conf)
@@ -91,6 +91,14 @@ def create_smt_region_map(conf):
         except Exception:
             logging.error('Missing public-ips data in section %s' % section)
             sys.exit(1)
+        try:
+            region_public_ipv6_ranges = ''
+            region_public_ipv6_ranges = region_data_cfg.get(
+                section,
+                'public-ipsv6'
+            )
+        except Exception:
+            pass
         try:
             region_smt_ips = region_data_cfg.get(section, 'smt-server-ip')
         except Exception:
@@ -136,14 +144,24 @@ def create_smt_region_map(conf):
         region_name_to_smt_data_map[section] = smt_info
         for ip_range in region_public_ip_ranges.split(','):
             try:
-                ipaddress.ip_network(ip_range)
+                ipaddress.IPv4Network(ip_range)
             except ValueError:
                 msg = 'Could not proces range, improper format: %s'
                 logging.error(msg % ip_range)
                 continue
-            ip_range_to_smt_data_map.insert(ip_range, smt_info)
 
-    return ip_range_to_smt_data_map, region_name_to_smt_data_map
+            ipv4_ranges_map.insert(ip_range, smt_info)
+
+        for ip_range in region_public_ipv6_ranges.split(','):
+            try:
+                ipaddress.IPv6Network(ip_range)
+            except ValueError:
+                msg = 'Could not proces range, improper format: %s'
+                logging.error(msg % ip_range)
+                continue
+            ipv6_ranges_map.insert(ip_range, smt_info)
+
+    return ipv4_ranges_map, ipv6_ranges_map, region_name_to_smt_data_map
 
 # ============================================================================
 def usage():
@@ -194,11 +212,10 @@ for option, option_value in cmd_opts:
 srvConfig = configparser.RawConfigParser()
 try:
     parsed = srvConfig.read(region_info_config_name)
-except Exception:
+except Exception as e:
     msg = 'Could not parse configuration file "%s"'
     print(msg % region_info_config_name)
-    type, value, tb = sys.exc_info()
-    print(value.message)
+    print(str(e))
     sys.exit(1)
 
 if not parsed:
@@ -230,7 +247,7 @@ except IOError:
 
 
 # Build the map initially
-ip_range_to_smt_data_map, region_name_to_smt_data_map = create_smt_region_map(
+ipv4_ranges_map, ipv6_ranges_map, region_name_to_smt_data_map = create_smt_region_map(
     region_data_config_name
 )
 
@@ -252,7 +269,8 @@ def index():
         requester_ip,
         region_hint,
         region_name_to_smt_data_map,
-        ip_range_to_smt_data_map
+        ipv4_ranges_map,
+        ipv6_ranges_map
     )
 
     if response_xml:
@@ -264,4 +282,4 @@ def index():
 
 # Run the service
 if __name__ == '__main__':
-    app.run(debug=True, host='::', port=5555)
+    app.run(debug=True)
