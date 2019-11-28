@@ -1,28 +1,28 @@
- # Copyright (c) 2018 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2019 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
-# This file is part of ec2utilsbase.
+# This file is part of cloud-regionsrv.
 #
-# ec2utilsbase is free software: you can redistribute it and/or modify
+# cloud-regionsrv is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# ec2utilsbase is distributed in the hope that it will be useful,
+# cloud-regionsrv is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with ec2utilsbase.  If not, see <http://www.gnu.org/licenses/>.
+# along with cloud-regionsrv.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Service that returns SMT server information based on a region hint or the
-IP address of the requesting client.
+Service that returns update server information based on a region
+hint or the IP address of the requesting client.
 
 The service works with two configuration files, the configuration for
 the service itself, /etc/regionService/regionInfo.cfg by default or
 specified with -f on the command line; and the configuration for the
-region SMT server data, /etc/regionService/regionData.cfg, or as configured.
+region update server data, /etc/regionService/regionData.cfg, or as configured.
 
 The regionInfo.cfg file is in ini format containing a [server] section
 with the logFile and regionConfig options.
@@ -34,7 +34,7 @@ regionConfig = PATH_TO_REGION_DATA_FILE_INCLUDING_FILENAME
 The region data configuration file is also in ini format. Each section
 defines a region and contains options for public-ips, smt-server-ip,
 smt-server-name, and smt-fingerprint. IPv6 region IP addresses and
-SMT server addresses are specified by the respective *v6 entries. The
+update server addresses are specified by the respective *v6 entries. The
 IPv6 entries are optional. It is assumed that there is no DNS
 resolution of the name, thus both fields -ip and -name are expected.
 
@@ -64,10 +64,10 @@ from flask import request
 def create_smt_region_map(conf):
     """Create two mappings:
          ip_to_smt_data_map:
-             maps all IP ranges to their respctive SMT server info in a
+             maps all IP ranges to their respective update server info in a
              tree structure
          region_name_to_smt_data_map:
-             maps all region names to their respective SMT server info"""
+             maps all region names to their respective update server info"""
     ipv4_ranges_map = pytricia.PyTricia()
     ipv6_ranges_map = pytricia.PyTricia(128)
     region_name_to_smt_data_map = {}
@@ -146,7 +146,7 @@ def create_smt_region_map(conf):
             try:
                 ipaddress.IPv4Network(ip_range)
             except ValueError:
-                msg = 'Could not proces range, improper format: %s'
+                msg = 'Could not process range, improper format: %s'
                 logging.error(msg % ip_range)
                 continue
 
