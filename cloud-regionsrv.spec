@@ -81,6 +81,7 @@ fi
 %attr(755,regionsrv,regionsrv) %dir /srv/www/regionService
 /srv/www/regionService/regionInfo.wsgi
 /srv/www/regionService/regionInfo.py
+/srv/www/regionService/region_srv.py
 %attr(755,regionsrv,regionsrv) %dir /var/log/regionService
 %attr(644,regionsrv,regionsrv) %ghost /var/log/regionService/regionInfo.log
 %dir %{_sysconfdir}/apache2

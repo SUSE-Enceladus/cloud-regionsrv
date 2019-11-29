@@ -1,0 +1,12 @@
+language: python
+python:
+  - "3.6"
+  - "3.7"
+  - "3.8"
+install:
+  - pip install lxml flask pytricia
+  - pip install pytest-cov codecov
+script:
+  - pytest --cov=./srv/
+after_success:
+    - codecov
