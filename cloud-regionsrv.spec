@@ -62,10 +62,10 @@ Generic configuration for the region service
 %make_install
 
 %pre
-if [ ! `grep regionsrv /etc/group 2>&1 /dev/null` ]; then
+if ! grep -q regionsrv /etc/group; then
     /usr/sbin/groupadd --system regionsrv  2> /dev/null
 fi
-if [ ! `grep regionsrv /etc/passwd 2>&1 /dev/null` ]; then
+if ! grep -q regionsrv /etc/passwd; then
     /usr/sbin/useradd -r -g regionsrv -s /bin/false -c "Cloud Region Service" \
         -d /var/lib/regionsrv regionsrv 2> /dev/null || :
 else
