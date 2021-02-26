@@ -141,7 +141,7 @@ def create_smt_region_map(conf):
             )
             sys.exit(1)
 
-        region_name_to_smt_data_map[section] = smt_info
+        region_name_to_smt_data_map[section.lower()] = smt_info
         for ip_range in region_public_ip_ranges.split(','):
             try:
                 ipaddress.IPv4Network(ip_range)
@@ -258,7 +258,7 @@ app = Flask(__name__)
 @app.route('/regionInfo')
 def index():
     requester_ip = request.remote_addr
-    region_hint = request.args.get('regionHint')
+    region_hint = request.args.get('regionHint').lower()
 
     logging.info('Data request from: %s' % requester_ip)
 
