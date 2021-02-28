@@ -1,4 +1,4 @@
-# Copyright (c) 2019 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2021 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
 # This file is part of cloud-regionsrv.
 #
@@ -258,11 +258,12 @@ app = Flask(__name__)
 @app.route('/regionInfo')
 def index():
     requester_ip = request.remote_addr
-    region_hint = request.args.get('regionHint').lower()
+    region_hint = request.args.get('regionHint')
 
     logging.info('Data request from: %s' % requester_ip)
 
     if region_hint:
+        region_hint = region_hint.lower()
         logging.info('\tRegion hint: %s' % region_hint)
 
     response_xml = region_srv.get_response_xml(
