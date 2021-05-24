@@ -42,7 +42,7 @@ def create_self_signed_cert(cert_dir, cert_file, cert_key, options):
     """
     # create a key pair
     k = crypto.PKey()
-    k.generate_key(crypto.TYPE_RSA, 2048)
+    k.generate_key(crypto.TYPE_RSA, 4096)
 
     # Figure setting for subjectAltName
     san = 'IP:%s'
