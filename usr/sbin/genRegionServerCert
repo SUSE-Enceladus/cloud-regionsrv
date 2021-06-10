@@ -42,15 +42,26 @@ def create_self_signed_cert(cert_dir, cert_file, cert_key, options):
     """
     # create a key pair
     k = crypto.PKey()
-    k.generate_key(crypto.TYPE_RSA, 2048)
+    k.generate_key(crypto.TYPE_RSA, 4096)
 
     # Figure setting for subjectAltName
-    san = 'IP:%s'
+    template = 'IP:%s'
     try:
         i = ipaddress.ip_address(options.hostname)
     except ValueError:
-        san = 'DNS:%s'
-    alt_name = san % options.hostname
+        template = 'DNS:%s'
+    san = [template % options.hostname]
+    try:
+        for ip in options.san_ips:
+            san.append('IP:%s' % ip)
+    except TypeError:
+        pass
+    try:
+        for dns in options.san_dns:
+            san.append('DNS:%s' % dns)
+    except TypeError:
+        pass
+    san_string = ', '.join(san)
 
     # create a self-signed cert
     cert = crypto.X509()
@@ -64,7 +75,7 @@ def create_self_signed_cert(cert_dir, cert_file, cert_key, options):
         crypto.X509Extension(
             b'subjectAltName',
             False,
-            alt_name.encode())
+            san_string.encode())
     ])
     cert.set_serial_number(1000)
     cert.gmtime_adj_notBefore(0)
@@ -119,6 +130,18 @@ argparse.add_option(
     '-s', '--state',
     help=sHelp,
     dest='state'
+)
+argparse.add_option(
+    '--san-ip',
+    action='append',
+    help='Add an additional IP for which the certificate is valid',
+    dest='san_ips'
+)
+argparse.add_option(
+    '--san-dns',
+    action='append',
+    help='Add an additional hostname for which the certificate is valid',
+    dest='san_dns'
 )
 
 options, args = argparse.parse_args()
