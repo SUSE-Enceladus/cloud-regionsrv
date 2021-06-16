@@ -2,7 +2,7 @@
 # spec file for package cloud-regionsrv
 # this code base is under development
 #
-# Copyright (c) 2018 SUSE LLC
+# Copyright (c) 2021 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
