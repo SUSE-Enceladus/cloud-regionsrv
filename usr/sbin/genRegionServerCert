@@ -28,9 +28,11 @@ Convenience implementation
 """
 
 from OpenSSL import crypto, SSL
+import errno
 import getpass
 import optparse
 import os
+import shutil
 import sys
 import time
 
@@ -140,18 +142,22 @@ create_self_signed_cert(
     options
 )
 
-os.system(
-    'cp /root/regionServCert/%s /root/regionServCert/%s.pem'
-    % (cert_file, options.hostname)
-)
-os.rename(
-    '/root/regionServCert/%s' % cert_file,
-    '/etc/apache2/ssl.crt/%s' % cert_file
-)
-os.rename(
-    '/root/regionServCert/%s' % key_file,
-    '/etc/apache2/ssl.key/%s' % key_file
-)
+shutil.copy(
+        '/root/regionServCert/%s' % cert_file,
+        '/root/regionServCert/%s.pem' % options.hostname
+    )
+
+for filename in [cert_file, key_file]:
+    source_file = '/root/regionServCert/%s' % filename
+    destination = '/etc/apache2/ssl.crt/%s' % filename
+    try:
+        os.rename(source_file, destination)
+    except OSError as err:
+        # OSError: [Errno 18] Invalid cross-device link
+        if err.errno == errno.EXDEV:
+            # best effort across file systems
+            shutil.copyfile(source_file, destination)
+            os.unlink(source_file)
 
 # Modify the vhost file and restart apache
 ctx = open('/etc/apache2/vhosts.d/regionsrv_vhost.conf', 'r').read()
