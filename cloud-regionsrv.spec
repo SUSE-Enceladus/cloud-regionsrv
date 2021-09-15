@@ -17,7 +17,7 @@
 #
 
 Name:           cloud-regionsrv
-Version:        7.0.1
+Version:        7.0.2
 Release:        0
 License:        GPL-3.0+
 Summary:        Cloud Environment Region Service
@@ -95,5 +95,3 @@ fi
 
 
 %changelog
-
-
