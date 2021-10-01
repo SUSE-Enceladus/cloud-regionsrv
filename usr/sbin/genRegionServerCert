@@ -186,8 +186,9 @@ shutil.copy(
     )
 
 for filename in [cert_file, key_file]:
+    part = filename.split('.')[-1]
     source_file = '/root/regionServCert/%s' % filename
-    destination = '/etc/apache2/ssl.crt/%s' % filename
+    destination = '/etc/apache2/ssl.%s/%s' % (part, filename)
     try:
         os.rename(source_file, destination)
     except OSError as err:
