@@ -156,10 +156,6 @@ def create_smt_region_map(conf):
             try:
                 ipaddress.IPv6Network(ip_range)
             except ValueError:
-                # Besides IPv6 being optional
-                # if IPv6 addresses are present
-                # in /etc/regionService/regionData.cfg file
-                # they must have a valid value
                 msg = 'Could not process IPv6 range, improper format: %s'
                 logging.error(msg % ip_range)
                 continue
