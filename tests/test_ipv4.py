@@ -30,11 +30,11 @@ import region_srv
 from helpers import xml_helper
 
 region_data = [
-    ('10.10.10.10', None, '10.susecloud.net', '0a:0a:0a:0a'),
-    ('20.20.20.20', None, '20.susecloud.net', '0b:0b:0b:0b')
+    ('10.10.10.10', None, '10.susecloud.net', '0a:0a:0a:0a', 'antarctica-1'),
+    ('20.20.20.20', None, '20.susecloud.net', '0b:0b:0b:0b', 'antarctica-1')
 ]
 
-region_map = {'antarctica-central': region_data}
+region_map = {'antarctica-1': region_data}
 
 ipv4_ranges_map = pytricia.PyTricia()
 ipv4_ranges_map.insert('123.123.0.0/16', region_data)
@@ -44,7 +44,7 @@ ipv6_ranges_map = pytricia.PyTricia(128)
 def test_with_region_hint():
     xml = region_srv.get_response_xml(
         '0.0.0.0',
-        'antarctica-central',
+        'antarctica-1',
         region_map,
         ipv4_ranges_map,
         ipv6_ranges_map

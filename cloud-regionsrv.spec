@@ -2,7 +2,7 @@
 # spec file for package cloud-regionsrv
 # this code base is under development
 #
-# Copyright (c) 2021 SUSE LLC
+# Copyright (c) 2022 SUSE LLC
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -17,7 +17,7 @@
 #
 
 Name:           cloud-regionsrv
-Version:        8.1.2
+Version:        8.1.3
 Release:        0
 License:        GPL-3.0+
 Summary:        Cloud Environment Region Service
