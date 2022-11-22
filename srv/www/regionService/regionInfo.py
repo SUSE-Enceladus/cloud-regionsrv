@@ -1,4 +1,4 @@
-# Copyright (c) 2021 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
+# Copyright (c) 2022 SUSE LLC, Robert Schweikert <rjschwei@suse.com>
 #
 # This file is part of cloud-regionsrv.
 #
@@ -133,7 +133,8 @@ def create_smt_region_map(conf):
                 region_smt_ips,
                 region_smt_ipsv6,
                 region_smt_names,
-                region_smt_cert_fingerprints
+                region_smt_cert_fingerprints,
+                section.lower()
             )
         except ValueError as e:
             logging.error(

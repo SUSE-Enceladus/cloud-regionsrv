@@ -22,10 +22,11 @@ def assert_xml_validity(smt_info_elems, region_data):
     ipv6s = [x.attrib.get('SMTserverIPv6', None) for x in smt_info_elems]
     server_names = [x.attrib['SMTserverName'] for x in smt_info_elems]
     fingerprints = [x.attrib['fingerprint'] for x in smt_info_elems]
+    regions = [x.attrib['region'] for x in smt_info_elems]
 
     xml_tuples = [
         (
-            ipv4s[i], ipv6s[i], server_names[i], fingerprints[i]
+            ipv4s[i], ipv6s[i], server_names[i], fingerprints[i], regions[i]
         ) for i in range(0, len(ipv4s))
     ]
 

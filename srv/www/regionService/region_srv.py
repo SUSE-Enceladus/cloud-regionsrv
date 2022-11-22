@@ -19,7 +19,8 @@ def get_response_xml(requester_ip, region_hint, region_name_to_smt_data_map, ipv
     if not smt_server_data:
         return
 
-    # Randomize the order of the update server information provided to the client
+    # Randomize the order of the update server information
+    # provided to the client
     smt_server_data = random.sample(smt_server_data, len(smt_server_data))
 
     smt_info_xml = '<regionSMTdata>\n'
@@ -28,13 +29,14 @@ def get_response_xml(requester_ip, region_hint, region_name_to_smt_data_map, ipv
         if update_server[1]:
             smt_info_xml += 'SMTserverIPv6="%s" ' % update_server[1]
         smt_info_xml += 'SMTserverName="%s" ' % update_server[2]
-        smt_info_xml += 'fingerprint="%s"/>\n' % update_server[3]
+        smt_info_xml += 'fingerprint="%s" ' % update_server[3]
+        smt_info_xml += 'region="%s"/>\n' % update_server[4]
 
     smt_info_xml += '</regionSMTdata>'
     return smt_info_xml
 
 
-def parse_region_info(region_smt_ips, region_smt_ipsv6, region_smt_names, region_smt_cert_fingerprints):
+def parse_region_info(region_smt_ips, region_smt_ipsv6, region_smt_names, region_smt_cert_fingerprints, region):
     ipsv4 = region_smt_ips.split(',')
     num_ips = len(ipsv4)
 
@@ -63,7 +65,7 @@ def parse_region_info(region_smt_ips, region_smt_ipsv6, region_smt_names, region
 
     region_info = [
         (
-            ipsv4[i], ipsv6[i], fqdns[i], fingerprints[i]
+            ipsv4[i], ipsv6[i], fqdns[i], fingerprints[i], region
         ) for i in range(0, len(ipsv4))
     ]
 
