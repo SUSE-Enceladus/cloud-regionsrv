@@ -60,6 +60,33 @@ from flask import Flask
 from flask import request
 
 
+AZURE_IP_RANGE_PROC_CFG = '/etc/azureIPRangeProc.cfg'
+
+# ============================================================================
+def get_region_hint_alias(region_hint):
+    """Return region hint whose alias points to."""
+    azure_ip_range_cfg = configparser.RawConfigParser()
+    if not azure_ip_range_cfg.read(AZURE_IP_RANGE_PROC_CFG):
+        logging.warning('Alias region hint will be ignored.')
+        return
+
+    for section in azure_ip_range_cfg.sections():
+        comments = None
+        try:
+            if azure_ip_range_cfg.has_option(section, 'comments'):
+                comments = azure_ip_range_cfg.get(
+                    section,
+                    'comments'
+                )
+        except Exception:
+            pass
+        if (
+            comments and region_hint and
+            (region_hint in comments) and ('alias' in comments)
+        ):
+            return section
+
+
 # ============================================================================
 def create_smt_region_map(conf):
     """Create two mappings:
@@ -266,6 +293,11 @@ def index():
 
     if region_hint:
         region_hint = region_hint.lower()
+        alias = get_region_hint_alias(region_hint)
+        if alias:
+            logging.info('Using alias of %s: %s' % (region_hint, alias))
+            region_hint = alias
+
         logging.info('\tRegion hint: %s' % region_hint)
 
     response_xml = region_srv.get_response_xml(
