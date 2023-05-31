@@ -72,14 +72,11 @@ def get_region_hint_alias(region_hint):
 
     for section in azure_ip_range_cfg.sections():
         comments = None
-        try:
-            if azure_ip_range_cfg.has_option(section, 'comments'):
-                comments = azure_ip_range_cfg.get(
-                    section,
-                    'comments'
-                )
-        except Exception:
-            pass
+        if azure_ip_range_cfg.has_option(section, 'comments'):
+            comments = azure_ip_range_cfg.get(
+                section,
+                'comments'
+            )
         if (
             comments and region_hint and
             (region_hint in comments) and ('alias' in comments)
