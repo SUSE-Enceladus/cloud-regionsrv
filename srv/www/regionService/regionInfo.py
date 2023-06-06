@@ -49,6 +49,7 @@ smt-fingerprint = SMT_CERT_FINGERPRINT
 
 import configparser
 import getopt
+import glob
 import ipaddress
 import logging
 import os
@@ -290,10 +291,11 @@ def index():
 
     if region_hint:
         region_hint = region_hint.lower()
-        alias = get_region_hint_alias(region_hint)
-        if alias:
-            logging.info('Using alias of %s: %s' % (region_hint, alias))
-            region_hint = alias
+        if AZURE_IP_RANGE_PROC_CFG in glob.glob('/etc/*IPRangeProc.cfg'):
+            alias = get_region_hint_alias(region_hint)
+            if alias:
+                logging.info('Using alias of %s: %s' % (region_hint, alias))
+                region_hint = alias
 
         logging.info('\tRegion hint: %s' % region_hint)
 
