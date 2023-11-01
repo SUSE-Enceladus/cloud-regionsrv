@@ -2,7 +2,10 @@ import random
 import ipaddress
 
 
-def get_response_xml(requester_ip, region_hint, region_name_to_smt_data_map, ipv4_ranges_map, ipv6_ranges_map):
+def get_response_xml(
+        requester_ip, region_hint, region_name_to_smt_data_map,
+        ipv4_ranges_map, ipv6_ranges_map
+):
     smt_server_data = None
 
     if region_hint:
@@ -36,29 +39,47 @@ def get_response_xml(requester_ip, region_hint, region_name_to_smt_data_map, ipv
     return smt_info_xml
 
 
-def parse_region_info(region_smt_ips, region_smt_ipsv6, region_smt_names, region_smt_cert_fingerprints, region):
-    ipsv4 = region_smt_ips.split(',')
-    num_ips = len(ipsv4)
+def parse_region_info(
+        region_smt_ips, region_smt_ipsv6, region_smt_names,
+        region_smt_cert_fingerprints, region
+):
+    num_ips_v4 = None
+    ipsv4 = []
+    if region_smt_ips:
+        ipsv4 = region_smt_ips.split(',')
+        num_ips_v4 = len(ipsv4)
 
+    num_ips_v6 = None
+    ipsv6 = []
     if region_smt_ipsv6:
         ipsv6 = region_smt_ipsv6.split(',')
-        if len(ipsv6) != num_ips:
-            msg = 'Number of configured SMT IPv4 adresses does not '
+        num_ips_v6 = len(ipsv6)
+        if num_ips_v4 and num_ips_v6 != num_ips_v4:
+            msg = 'Number of configured IPv4 adresses does not '
             msg += 'match number of configured IPv6 addresses'
             raise ValueError(msg)
-    else:
+
+    if not num_ips_v4 and not num_ips_v6:
+        raise ValueError('Neither IPv4 nor IPv6 configured for update server')
+    
+    num_ips = num_ips_v4 or num_ips_v6
+    if not ipsv4:
+        ipsv4 = [None] * num_ips
+    if not ipsv6:
         ipsv6 = [None] * num_ips
 
     fqdns = region_smt_names.split(',')
     if len(fqdns) > 1 and len(fqdns) != num_ips:
-        raise ValueError('Ambiguous SMT name and SMT IP pairings')
+        raise ValueError('Ambiguous update server name and IP pairings')
 
     if len(fqdns) == 1 and len(fqdns) != num_ips:
         fqdns = [fqdns[0]] * num_ips
 
     fingerprints = region_smt_cert_fingerprints.split(',')
     if len(fingerprints) > 1 and len(fingerprints) != num_ips:
-        raise ValueError('Ambiguous SMT name and finger print pairings')
+        raise ValueError(
+            'Ambiguous update server name and finger print pairings'
+        )
 
     if len(fingerprints) == 1 and len(fingerprints) != num_ips:
         fingerprints = [fingerprints[0]] * num_ips

@@ -1,0 +1,105 @@
+You will need flask installed. Test the following procedure
+
+TEST 1:
+-> python3 srv/www/regionService/regionInfo.py -r tests/configs/regionData_no_client_ips_no_server_ips.cfg -f tests/configs/regionInfo_all_tests.cfg
+
+Expected result:
+- the server does not start, i.e. echo $? returns 1
+- the log file /tmp/regionsrv_test.log contains
+  ERROR:Missing update server IPs for either protocol at least one of smt-server-ip and smt-server-ipv6 must be configured
+
+TEST 2:
+-> python3 srv/www/regionService/regionInfo.py -r tests/configs/regionData_no_client_ips_ipv4_servers_only.cfg -f tests/configs/regionInfo_all_tests.cfg
+
+In a different window
+
+-> curl 'http://127.0.0.1:5000/regionInfo?regionHint=region-1'
+
+Expected output
+
+<regionSMTdata>
+<smtInfo SMTserverIP="5.6.7.8" SMTserverName="test-r1.susecloud.net" fingerprint="aa:bb:cc" region="region-1"/>
+<smtInfo SMTserverIP="1.2.3.4" SMTserverName="test-r1.susecloud.net" fingerprint="aa:bb:cc" region="region-1"/>
+</regionSMTdata>
+
+-> curl 'http://127.0.0.1:5000/regionInfo'
+
+Expected output
+
+Not found
+
+-> curl 'http://127.0.0.1:5000/regionInfo?regionHint=region-3'
+
+Expected output
+
+Not found
+
+
+
+TEST 3:
+-> python3 srv/www/regionService/regionInfo.py -r tests/configs/regionData_no_client_ips_ipv6_servers_only.cfg -f tests/configs/regionInfo_all_tests.cfg
+
+
+In a different window
+
+-> curl 'http://127.0.0.1:5000/regionInfo?regionHint=region-2'
+
+Expected output
+
+<regionSMTdata>
+<smtInfo SMTserverIP="None" SMTserverIPv6="::10" SMTserverName="test-r2.susecloud.net" fingerprint="aa:bb:cc" region="region-2"/>
+<smtInfo SMTserverIP="None" SMTserverIPv6="::20" SMTserverName="test-r2.susecloud.net" fingerprint="aa:bb:cc" region="region-2"/>
+</regionSMTdata>
+
+-> curl 'http://127.0.0.1:5000/regionInfo'
+
+Expected output
+
+Not found
+
+
+TEST 4:
+-> python3 srv/www/regionService/regionInfo.py -r tests/configs/regionData_no_client_ips_dual_stack_servers.cfg -f tests/configs/regionInfo_all_tests.cfg
+
+In a different window
+
+-> curl 'http://127.0.0.1:5000/regionInfo?regionHint=region-2'
+
+Expected output
+
+<regionSMTdata>
+<smtInfo SMTserverIP="50.60.70.80" SMTserverIPv6="::20" SMTserverName="test-r2.susecloud.net" fingerprint="aa:bb:cc" region="region-2"/>
+<smtInfo SMTserverIP="10.20.30.40" SMTserverIPv6="::10" SMTserverName="test-r2.susecloud.net" fingerprint="aa:bb:cc" region="region-2"/>
+</regionSMTdata>
+
+-> curl 'http://127.0.0.1:5000/regionInfo'
+
+Expected output
+
+Not found
+
+TEST 5:
+-> python3 srv/www/regionService/regionInfo.py -r tests/configs/regionData_no_client_ips_dual_stack_servers_ipv4_fallback.cfg -f tests/configs/regionInfo_all_tests.cfg
+
+In a different window
+
+-> curl 'http://127.0.0.1:5000/regionInfo'
+
+Expected output
+
+<regionSMTdata>
+<smtInfo SMTserverIP="1.2.3.4" SMTserverIPv6="::1" SMTserverName="test-r1.susecloud.net" fingerprint="aa:bb:cc" region="region-1"/>
+<smtInfo SMTserverIP="5.6.7.8" SMTserverIPv6="::2" SMTserverName="test-r1.susecloud.net" fingerprint="aa:bb:cc" region="region-1"/>
+</regionSMTdata>
+
+
+-> curl 'http://127.0.0.1:5000/regionInfo?reginHint=region-3'
+
+Expected output
+
+<regionSMTdata>
+<smtInfo SMTserverIP="1.2.3.4" SMTserverIPv6="::1" SMTserverName="test-r1.susecloud.net" fingerprint="aa:bb:cc" region="region-1"/>
+<smtInfo SMTserverIP="5.6.7.8" SMTserverIPv6="::2" SMTserverName="test-r1.susecloud.net" fingerprint="aa:bb:cc" region="region-1"/>
+</regionSMTdata>
+
+-> rm /tmp/regionsrv_test.log

@@ -75,7 +75,7 @@ def create_smt_region_map(conf):
     try:
         parsed = region_data_cfg.read(conf)
     except Exception as e:
-        logging.error('Could not parse configuration file %s' % conf)
+        logging.error('Could not parse configuration file %s.' % conf)
         logging.error(str(e))
         return
     if not parsed:
@@ -84,13 +84,15 @@ def create_smt_region_map(conf):
 
     for section in region_data_cfg.sections():
         try:
+            region_public_ip_ranges = ''
             region_public_ip_ranges = region_data_cfg.get(
                 section,
                 'public-ips'
             )
         except Exception:
-            logging.error('Missing public-ips data in section %s' % section)
-            sys.exit(1)
+            info_msg = 'public-ips data not configured in section %s.' % section
+            info_msg += ' No IPv4 address based fallback possible.'
+            logging.info(info_msg)
         try:
             region_public_ipv6_ranges = ''
             region_public_ipv6_ranges = region_data_cfg.get(
@@ -98,23 +100,28 @@ def create_smt_region_map(conf):
                 'public-ipsv6'
             )
         except Exception:
-            pass
+            info_msg = 'public-ipsv6 data not configured in section '
+            info_msg += '%s. No IPv6 address based fallback possible.' % section
+            logging.info(info_msg)
         try:
+            region_smt_ips = None
             region_smt_ips = region_data_cfg.get(section, 'smt-server-ip')
         except Exception:
-            logging.error('Missing smt-server-ip data in section %s' % section)
-            sys.exit(1)
+            info_msg = 'smt-server-ip data in section %s not ' % section
+            info_msg += 'configured. Update servers cannot be reached over IPv4'
+            logging.info(info_msg)
         try:
             region_smt_ipsv6 = None
             region_smt_ipsv6 = region_data_cfg.get(section, 'smt-server-ipv6')
         except Exception:
-            # IPv6 addresses are optional not all cloud frameworks support IPv6
-            pass
+            info_msg = 'smt-server-ipv6 data in section %s not ' % section
+            info_msg += 'configured. Update servers cannot be reached over IPv6'
+            logging.info(info_msg)
         try:
             region_smt_names = region_data_cfg.get(section, 'smt-server-name')
         except Exception:
             logging.error(
-                'Missing smt-server-name data in section %s' % section
+                'Missing smt-server-name data in section %s.' % section
             )
             sys.exit(1)
         try:
@@ -126,6 +133,13 @@ def create_smt_region_map(conf):
             logging.error(
                 'Missing smt-fingerprint data in section %s' % section
             )
+            sys.exit(1)
+
+        if not region_smt_ips and not region_smt_ipsv6:
+            err_msg = 'Missing update server IPs for either protocol at '
+            err_msg += 'least one of smt-server-ip and smt-server-ipv6 '
+            err_msg += 'must be configured'
+            logging.error(err_msg)
             sys.exit(1)
 
         try:
@@ -144,6 +158,8 @@ def create_smt_region_map(conf):
 
         region_name_to_smt_data_map[section.lower()] = smt_info
         for ip_range in region_public_ip_ranges.split(','):
+            if not ip_range:
+                continue
             try:
                 ipaddress.IPv4Network(ip_range)
             except ValueError:
@@ -154,6 +170,8 @@ def create_smt_region_map(conf):
             ipv4_ranges_map.insert(ip_range, smt_info)
 
         for ip_range in region_public_ipv6_ranges.split(','):
+            if not ip_range:
+                continue
             try:
                 ipaddress.IPv6Network(ip_range)
             except ValueError:
@@ -249,9 +267,8 @@ except IOError:
 
 
 # Build the map initially
-ipv4_ranges_map, ipv6_ranges_map, region_name_to_smt_data_map = create_smt_region_map(
-    region_data_config_name
-)
+ipv4_ranges_map, ipv6_ranges_map, region_name_to_smt_data_map = \
+    create_smt_region_map(region_data_config_name)
 
 # Implement the REST API
 app = Flask(__name__)
