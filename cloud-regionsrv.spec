@@ -75,7 +75,8 @@ fi
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE README.md
+%doc README.md
+%license LICENSE
 %config(noreplace) %{_sysconfdir}/apache2/vhosts.d/regionsrv_vhost.conf
 %config %{_sysconfdir}/logrotate.d/regionInfo.lr
 %attr(755,regionsrv,regionsrv) %dir /srv/www/regionService
