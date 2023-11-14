@@ -81,7 +81,7 @@ def create_self_signed_cert(cert_dir, cert_file, cert_key, options):
     ])
     cert.set_serial_number(1000)
     cert.gmtime_adj_notBefore(0)
-    cert.gmtime_adj_notAfter(10*365*24*60*60)
+    cert.gmtime_adj_notAfter(int(options.exp_date_years)*365*24*60*60)
     cert.set_issuer(cert.get_subject())
     cert.set_pubkey(k)
     cert.sign(k, 'sha256')
@@ -144,6 +144,11 @@ argparse.add_option(
     action='append',
     help='Add an additional hostname for which the certificate is valid',
     dest='san_dns'
+)
+argparse.add_option(
+    '-e', '--expire-date-years',
+    help='Set the number of years for the expiration date of the cert',
+    dest='exp_date_years'
 )
 
 options, args = argparse.parse_args()
