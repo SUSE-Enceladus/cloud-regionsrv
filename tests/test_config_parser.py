@@ -108,7 +108,7 @@ def test_with_names_mismatch():
 
     with pytest.raises(
             ValueError,
-            match='Ambiguous SMT name and SMT IP pairings'
+            match='Ambiguous update server name and IP pairings'
     ):
         region_srv.parse_region_info(*input.values())
 
@@ -123,6 +123,6 @@ def test_with_fingerprints_mismatch():
 
     with pytest.raises(
             ValueError,
-            match='Ambiguous SMT name and finger print pairings'
+            match='Ambiguous update server name and finger print pairings'
     ):
         region_srv.parse_region_info(*input.values())

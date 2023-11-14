@@ -17,7 +17,7 @@
 #
 
 Name:           cloud-regionsrv
-Version:        8.1.3
+Version:        8.2.0
 Release:        0
 License:        GPL-3.0+
 Summary:        Cloud Environment Region Service
@@ -75,7 +75,8 @@ fi
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE README.md
+%doc README.md
+%license LICENSE
 %config(noreplace) %{_sysconfdir}/apache2/vhosts.d/regionsrv_vhost.conf
 %config %{_sysconfdir}/logrotate.d/regionInfo.lr
 %attr(755,regionsrv,regionsrv) %dir /srv/www/regionService
