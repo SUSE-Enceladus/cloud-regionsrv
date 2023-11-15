@@ -147,7 +147,8 @@ argparse.add_option(
 )
 argparse.add_option(
     '-e', '--expire-date-years',
-    help='Set the number of years for the expiration date of the cert',
+    help='Set the number of years for the expiration date of the certificate',
+    default=10,
     dest='exp_date_years'
 )
 
