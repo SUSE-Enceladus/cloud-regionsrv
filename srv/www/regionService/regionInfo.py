@@ -125,6 +125,13 @@ def create_smt_region_map(conf):
             )
             sys.exit(1)
         try:
+            region_smt_registry_names = region_data_cfg.get(section, 'smt-registry-name')
+        except Exception:
+            logging.error(
+                'Missing smt-registry-name data in section %s.' % section
+            )
+            sys.exit(1)
+        try:
             region_smt_cert_fingerprints = region_data_cfg.get(
                 section,
                 'smt-fingerprint'
@@ -147,6 +154,7 @@ def create_smt_region_map(conf):
                 region_smt_ips,
                 region_smt_ipsv6,
                 region_smt_names,
+                region_smt_registry_names,
                 region_smt_cert_fingerprints,
                 section.lower()
             )
