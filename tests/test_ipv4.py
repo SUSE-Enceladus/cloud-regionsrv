@@ -30,8 +30,10 @@ import region_srv
 from helpers import xml_helper
 
 region_data = [
-    ('10.10.10.10', None, '10.susecloud.net', '0a:0a:0a:0a', 'antarctica-1'),
-    ('20.20.20.20', None, '20.susecloud.net', '0b:0b:0b:0b', 'antarctica-1')
+    ('10.10.10.10', None, '10.susecloud.net', 'registry1.susecloud.net',
+     '0a:0a:0a:0a', 'antarctica-1'),
+    ('20.20.20.20', None, '20.susecloud.net', 'registry2.susecloud.net',
+     '0b:0b:0b:0b', 'antarctica-1')
 ]
 
 region_map = {'antarctica-1': region_data}

@@ -32,14 +32,18 @@ def test_with_implicit_names_and_fps():
         'smt_ipsv4': '10.10.10.10,20.20.20.20,30.30.30.30',
         'smt_ipsv6': None,
         'smt_names': 'example.susecloud.net',
+        'smt_registry_names': 'registry_1.net,registry_2.net,registry_3.net',
         'smt_fps': '00:00:00:00',
         'region': 'test'
     }
 
     expected_output = [
-        ('10.10.10.10', None, 'example.susecloud.net', '00:00:00:00', 'test'),
-        ('20.20.20.20', None, 'example.susecloud.net', '00:00:00:00', 'test'),
-        ('30.30.30.30', None, 'example.susecloud.net', '00:00:00:00', 'test')
+        ('10.10.10.10', None, 'example.susecloud.net',
+         'registry_1.net','00:00:00:00', 'test'),
+        ('20.20.20.20', None, 'example.susecloud.net',
+         'registry_2.net', '00:00:00:00', 'test'),
+        ('30.30.30.30', None, 'example.susecloud.net',
+         'registry_3.net', '00:00:00:00', 'test')
     ]
 
     output = region_srv.parse_region_info(*input.values())
@@ -51,13 +55,17 @@ def test_with_explicit_names_and_fps():
         'smt_ipsv4': '10.10.10.10,20.20.20.20',
         'smt_ipsv6': None,
         'smt_names': 'one.susecloud.net,two.susecloud.net',
+        'smt_registry_names':
+        'registry_one.susecloud.net,registry_two.susecloud.net',
         'smt_fps': '0a:0a:0a:0a,0b:0b:0b:0b',
         'region': 'test'
     }
 
     expected_output = [
-        ('10.10.10.10', None, 'one.susecloud.net', '0a:0a:0a:0a', 'test'),
-        ('20.20.20.20', None, 'two.susecloud.net', '0b:0b:0b:0b', 'test')
+        ('10.10.10.10', None, 'one.susecloud.net',
+         'registry_one.susecloud.net', '0a:0a:0a:0a', 'test'),
+        ('20.20.20.20', None, 'two.susecloud.net',
+         'registry_two.susecloud.net', '0b:0b:0b:0b', 'test')
     ]
 
     output = region_srv.parse_region_info(*input.values())
@@ -69,13 +77,17 @@ def test_with_ipsv6():
         'smt_ipsv4': '10.10.10.10,20.20.20.20',
         'smt_ipsv6': '::0001,::0002',
         'smt_names': 'one.susecloud.net,two.susecloud.net',
+        'smt_registry_names':
+        'registry_one.susecloud.net,registry_two.susecloud.net',
         'smt_fps': '0a:0a:0a:0a,0b:0b:0b:0b',
         'region': 'test'
     }
 
     expected_output = [
-        ('10.10.10.10', '::0001', 'one.susecloud.net', '0a:0a:0a:0a', 'test'),
-        ('20.20.20.20', '::0002', 'two.susecloud.net', '0b:0b:0b:0b', 'test')
+        ('10.10.10.10', '::0001', 'one.susecloud.net',
+         'registry_one.susecloud.net', '0a:0a:0a:0a', 'test'),
+        ('20.20.20.20', '::0002', 'two.susecloud.net',
+         'registry_two.susecloud.net', '0b:0b:0b:0b', 'test')
     ]
 
     output = region_srv.parse_region_info(*input.values())
@@ -87,6 +99,8 @@ def test_with_ipsv6_mismatch():
         'smt_ipsv4': '10.10.10.10,20.20.20.20',
         'smt_ipsv6': '::0001',
         'smt_names': 'one.susecloud.net,two.susecloud.net',
+        'smt_registry_names':
+        'registry_one.susecloud.net,registry_two.susecloud.net',
         'smt_fps': '0a:0a:0a:0a,0b:0b:0b:0b',
         'region': 'test'
     }
@@ -102,6 +116,9 @@ def test_with_names_mismatch():
         'smt_ipsv4': '10.10.10.10,20.20.20.20,30.30.30.30',
         'smt_ipsv6': '::0001,::0002,:0003',
         'smt_names': 'one.susecloud.net,two.susecloud.net',
+        'smt_registry_names':  'registry_one.susecloud.net,'
+                               'registry_two.susecloud.net,'
+                               'registry_three.susecloud.net',
         'smt_fps': '0a:0a:0a:0a,0b:0b:0b:0b,0c:0c:0c:0c',
         'region': 'test'
     }
@@ -112,11 +129,33 @@ def test_with_names_mismatch():
     ):
         region_srv.parse_region_info(*input.values())
 
+
+def test_with_registry_names_mismatch():
+    input = {
+        'smt_ipsv4': '10.10.10.10,20.20.20.20,30.30.30.30',
+        'smt_ipsv6': '::0001,::0002,:0003',
+        'smt_names': 'one.susecloud.net,two.susecloud.net,three.susecloud.net',
+        'smt_registry_names':
+        'registry_one.susecloud.net,registry_two.susecloud.net',
+        'smt_fps': '0a:0a:0a:0a,0b:0b:0b:0b,0c:0c:0c:0c',
+        'region': 'test'
+    }
+
+    with pytest.raises(
+            ValueError,
+            match='Ambiguous update registry name and IP pairings'
+    ):
+        region_srv.parse_region_info(*input.values())
+
+
 def test_with_fingerprints_mismatch():
     input = {
         'smt_ipsv4': '10.10.10.10,20.20.20.20,30.30.30.30',
         'smt_ipsv6': '::0001,::0002,:0003',
         'smt_names': 'one.susecloud.net,two.susecloud.net,three.susecloud.net',
+        'smt_registry_names':
+        'registry_one.susecloud.net,registry_two.susecloud.net,'
+        'registry_three.susecloud.net',
         'smt_fps': '0a:0a:0a:0a,0b:0b:0b:0b',
         'region': 'test'
     }
