@@ -46,7 +46,7 @@ def create_self_signed_cert(cert_dir, cert_file, cert_key, options):
     k = crypto.PKey()
     k.generate_key(crypto.TYPE_RSA, 4096)
 
-    # Figure setting for subjectAltName
+    # Figure out setting for subjectAltName
     template = 'IP:%s'
     try:
         i = ipaddress.ip_address(options.hostname)
@@ -67,6 +67,7 @@ def create_self_signed_cert(cert_dir, cert_file, cert_key, options):
 
     # create a self-signed cert
     cert = crypto.X509()
+    cert.set_version(2) # THis will generate a version 3 certificate
     cert.get_subject().C = options.country
     cert.get_subject().ST = options.state
     cert.get_subject().L = options.location
@@ -164,7 +165,7 @@ if os.path.exists('/etc/apache2/ssl.crt/%s' % cert_file):
 
 if os.path.exists('/etc/apache2/ssl.key/%s' % key_file):
     print('Key for this server already exists, taking no action')
-    print('/etc/apache2/ssl.crt/%s' % key_file)
+    print('/etc/apache2/ssl.key/%s' % key_file)
     sys.exit(1)
 
 if not os.path.exists('/root/regionServCert'):
